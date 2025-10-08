@@ -1,0 +1,31 @@
+[workspace]
+channels = ["conda-forge"]
+name = "DiffuXion"
+description = "Polycrystal grain boundary diffusion and exploration"
+authors = [
+    "Sanath Keshav <keshav@mib.uni-stuttgart.de>",
+    "Lena Scholz <scholz@mib.uni-stuttgart.de>"
+]
+platforms = ["linux-64", "osx-arm64", "osx-64"]
+
+[dependencies]
+python = ">=3.14.0,<3.15"
+fans = ">=0.4.3,<0.5"
+pre-commit = ">=4.3.0,<5"
+h5py = ">=3.14.0,<4"
+lxml = ">=6.0.2,<7"
+scipy = ">=1.16.2,<2"
+sympy = ">=1.14.0,<2"
+
+[pypi-dependencies]
+MSUtils = { git = "https://github.com/DataAnalyticsEngineering/MSUtils.git" }
+
+[tasks]
+precommit = "pre-commit run --all-files"
+
+[tasks.h52xdmf]
+args = ["file", { arg = "extra", default = "" }]
+cmd  = "cd \"$INIT_CWD\" && python -m MSUtils.general.h52xdmf {{ extra }} {{ file }}"
+
+[environments]
+default = { features = [] }
