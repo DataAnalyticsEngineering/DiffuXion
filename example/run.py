@@ -391,6 +391,12 @@ def _(diff_bulk, diff_para, diff_perp, mo):
 
 @app.cell(hide_code=True)
 def _(mo):
+    mo.md(r"""## Simulation""")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
     _options_fields = ["concentration field", "concentration fluctuation field", "concentration gradient field", "flux field"]
     sim_output_select = mo.ui.multiselect(options=_options_fields)
     sim_output_select
@@ -510,11 +516,16 @@ def _(input_fn, mo, n_processes_input, result_fn_input, run_fans, subprocess):
     if run_fans.value:
         mo.output.replace(mo.md('Running FANS...'))
         with mo.capture_stdout() as _buffer:
-            #subprocess.run("mpiexec -n 4 FANS --version", shell=True)
             subprocess.run(f"mpiexec -n {n_processes_input.value} FANS {input_fn} {result_fn}", shell=True)
             mo.output.append(mo.md('Done!'))
         mo.output.append(_buffer.getvalue())
     return (result_fn,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""## Visualization""")
+    return
 
 
 @app.cell(hide_code=True)
@@ -532,38 +543,46 @@ def _(generate_xdmf, subprocess):
 
 
 @app.cell(hide_code=True)
-def _(mo, sim_output_select):
-    _options = ['microstructure'] + sim_output_select.value
-    visu_output_select = mo.ui.dropdown(label='Select field to visualize below', options=_options)
-    visu_output_select
-    return (visu_output_select,)
+def _(mo, resolution, sim_output_select):
+    do_inapp_visu = False
+    if resolution[0]*resolution[1]*resolution[2] <= 64*64*64:
+        do_inapp_visu = True
+        _options = ['microstructure'] + sim_output_select.value
+        visu_output_select = mo.ui.dropdown(label='Select field to visualize below', options=_options)
+        visu_output_select
+    else:
+        do_inapp_visu = False
+        mo.output.replace(mo.md('Resolution too high for in-app visualization! Please use ParaView to view the generated xdmf-file.'))
+    return do_inapp_visu, visu_output_select
 
 
 @app.cell(hide_code=True)
-def _(domain_size, measure, np, resolution):
-    # Parameters from your XDMF
-    origin = np.array([0, 0, 0])
-    spacing = np.array([domain_size[_i]/resolution[_i] for _i in range(3)])
+def _(do_inapp_visu, domain_size, measure, np, resolution):
+    if do_inapp_visu:
+        # Parameters from your XDMF
+        origin = np.array([0, 0, 0])
+        spacing = np.array([domain_size[_i]/resolution[_i] for _i in range(3)])
 
-    _surface_mask = np.zeros(resolution, dtype=bool)
-    _surface_mask[0,:,:] = True
-    _surface_mask[-1,:,:] = True
-    _surface_mask[:,0,:] = True
-    _surface_mask[:,-1,:] = True
-    _surface_mask[:,:,0] = True
-    _surface_mask[:,:,-1] = True
+        _surface_mask = np.zeros(resolution, dtype=bool)
+        _surface_mask[0,:,:] = True
+        _surface_mask[-1,:,:] = True
+        _surface_mask[:,0,:] = True
+        _surface_mask[:,-1,:] = True
+        _surface_mask[:,:,0] = True
+        _surface_mask[:,:,-1] = True
 
-    # Use marching cubes to extract isosurface based on level
-    level = 0.5
-    verts, faces, normals, values = measure.marching_cubes(_surface_mask, level=level)
+        # Use marching cubes to extract isosurface based on level
+        level = 0.5
+        verts, faces, normals, values = measure.marching_cubes(_surface_mask, level=level)
 
-    # Scale verts to physical coordinates
-    verts = origin + verts * spacing
+        # Scale verts to physical coordinates
+        verts = origin + verts * spacing
     return faces, spacing, verts
 
 
 @app.cell(hide_code=True)
 def _(
+    do_inapp_visu,
     faces,
     h5py,
     map_coordinates,
@@ -577,38 +596,39 @@ def _(
     verts,
     visu_output_select,
 ):
-    # Load scalar data from HDF5
-    result_dsn = f"{ms_dsn}/eroded_image_results/{result_prefix_input.value}/load0/time_step0/"
-    _h5_fn = result_fn
-    match visu_output_select.value:
-        case "microstructure":
-            result_dsn = f"{ms_dsn}/eroded_image/"
-            _h5_fn = ms_fn
-        case "concentration field":
-            result_dsn += "displacement"
-        case "concentration fluctuation field":
-            result_dsn += "displacement_fluctuation"
-        case "concentration gradient field":
-             result_dsn += "strain"
-        case "flux field":
-            result_dsn += "stress"
+    if do_inapp_visu:
+        # Load scalar data from HDF5
+        result_dsn = f"{ms_dsn}/eroded_image_results/{result_prefix_input.value}/load0/time_step0/"
+        _h5_fn = result_fn
+        match visu_output_select.value:
+            case "microstructure":
+                result_dsn = f"{ms_dsn}/eroded_image/"
+                _h5_fn = ms_fn
+            case "concentration field":
+                result_dsn += "displacement"
+            case "concentration fluctuation field":
+                result_dsn += "displacement_fluctuation"
+            case "concentration gradient field":
+                 result_dsn += "strain"
+            case "flux field":
+                result_dsn += "stress"
 
-    with h5py.File(_h5_fn, 'r') as f:
-        _field_ref = f[result_dsn]
-        if len(_field_ref.shape) > 3:
-            match _field_ref.shape[-1]:
-                case 1:
-                    _field = _field_ref[:][:,:,:,0]
-                case 3:
-                    _field = np.linalg.norm(_field_ref[:], axis=-1)
-        else:
-            _field = _field_ref[:]
+        with h5py.File(_h5_fn, 'r') as f:
+            _field_ref = f[result_dsn]
+            if len(_field_ref.shape) > 3:
+                match _field_ref.shape[-1]:
+                    case 1:
+                        _field = _field_ref[:][:,:,:,0]
+                    case 3:
+                        _field = np.linalg.norm(_field_ref[:], axis=-1)
+            else:
+                _field = _field_ref[:]
 
-    vertex_scalars = map_coordinates(_field, verts.T / spacing[:, None], order=1)
-    vertex_colors = trimesh.visual.interpolate(vertex_scalars, color_map='viridis')
+        vertex_scalars = map_coordinates(_field, verts.T / spacing[:, None], order=1)
+        vertex_colors = trimesh.visual.interpolate(vertex_scalars, color_map='viridis')
 
-    mesh = trimesh.Trimesh(vertices=verts, faces=faces, vertex_colors=vertex_colors, process=True)
-    mesh.show(viewer='marimo')
+        mesh = trimesh.Trimesh(vertices=verts, faces=faces, vertex_colors=vertex_colors, process=True)
+        mesh.show(viewer='marimo')
     return
 
 
