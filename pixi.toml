@@ -25,6 +25,7 @@ MSUtils = { git = "https://github.com/DataAnalyticsEngineering/MSUtils.git" }
 
 [tasks]
 precommit = "pre-commit run --all-files"
+start = "marimo run example/run.py"
 
 [tasks.h52xdmf]
 args = ["file", { arg = "extra", default = "" }]
