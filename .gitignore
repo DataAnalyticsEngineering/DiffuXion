@@ -191,6 +191,8 @@ Thumbs.db
 *.json
 *.vti
 
+!**/run.grid.json
+
 # pixi environments
 .pixi
 *.egg-info

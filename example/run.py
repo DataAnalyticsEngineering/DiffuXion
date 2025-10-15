@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.16.5"
-app = marimo.App(width="full")
+app = marimo.App(width="full", layout_file="layouts/run.grid.json")
 
 
 @app.cell(hide_code=True)
@@ -19,18 +19,13 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
-    # ...
-    ## Geometry
-    """
-    )
+    mo.md("""## Geometry""")
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    n_grains_input = mo.ui.text(label="number of grains", value="2")
+    n_grains_input = mo.ui.text(label="Number of grains:", value="2")
     n_grains_input
     return (n_grains_input,)
 
@@ -52,7 +47,7 @@ def _(mo, n_grains_input):
         _option_list.append("diamond")
 
     tess_type_input = mo.ui.dropdown(
-        label="tessellation type", options=_option_list, value="sobol"
+        label="Tessellation type:", options=_option_list, value="sobol"
     )
     tess_type_input
     return n_grains, tess_type_input
@@ -63,7 +58,7 @@ def _(mo, tess_type_input):
     seed_input = None
     if tess_type_input.value not in ["diamond", "rubiks-cube"]:
         seed_input = mo.ui.text(label="generator seed for tessellation", value="42")
-        seed_input
+        mo.output.replace(seed_input)
     return (seed_input,)
 
 
@@ -71,7 +66,7 @@ def _(mo, tess_type_input):
 def _(mo):
     def_domain = mo.ui.dropdown(
         options=["...size of the simulation domain", "...average grain size"],
-        label="define...",
+        label="Define...",
         value="...size of the simulation domain",
     )
     def_domain
@@ -82,12 +77,10 @@ def _(mo):
 def _(def_domain, mo):
     match def_domain.value:
         case "...size of the simulation domain":
-            domain_size_input = mo.ui.text(
-                label="size of domain [nm] (separated by commas):", value="1,1,1"
-            )
+            domain_size_input = mo.ui.text(label="Size of domain [nm]:", value="1,1,1")
         case "...average grain size":
             domain_size_input = mo.ui.text(
-                label="average grain size (assuming cube geometry) [nm]:", value="50"
+                label="Average grain size (assuming cube geometry) [nm]:", value="50"
             )
 
     domain_size_input
@@ -115,9 +108,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    resolution_input = mo.ui.text(
-        label="resolution in x,y,z (separated by commas)", value="256,256,256"
-    )
+    resolution_input = mo.ui.text(label="Resolution in x,y,z:", value="64,64,64")
     resolution_input
     return (resolution_input,)
 
@@ -133,7 +124,7 @@ def _(domain_size, resolution_input):
 def _(mo):
     def_thickness = mo.ui.dropdown(
         options=["...directly", "...as multiple of voxel length"],
-        label="define GB thickness...",
+        label="Define GB thickness...",
         value="...as multiple of voxel length",
     )
     def_thickness
@@ -146,9 +137,7 @@ def _(def_thickness, mo):
         case "...directly":
             thickness_input = mo.ui.text(label="GB thickness [nm]", value="2.5")
         case "...as multiple of voxel length":
-            thickness_input = mo.ui.text(
-                label="number of voxel layers to represent GB", value="8"
-            )
+            thickness_input = mo.ui.text(label="Number of voxel layers:", value="4")
     thickness_input
     return (thickness_input,)
 
@@ -189,9 +178,7 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    path_geo_input = mo.ui.text(
-        label="Path for export (without file ending):", value="data/voroImg_eroded"
-    )
+    path_geo_input = mo.ui.text(label="Path for export:", value="data/voroImg_eroded")
     path_geo_input
     return (path_geo_input,)
 
@@ -353,7 +340,7 @@ def _(mo):
 def _(mo):
     def_diff = mo.ui.dropdown(
         options=["...directly", "...via Arrhenius relation"],
-        label=r"define diffusion coefficients...",
+        label=r"Define diffusion coefficients...",
         value="...directly",
     )
     def_diff
@@ -387,7 +374,7 @@ def _(def_diff, mo):
                 label=r"$E^{\mathrm{GB}}_\Vert~ [\mathrm{meV}]$", value="500"
             )
             D_para = mo.ui.text(
-                label=r"$D^{\mathrm{GB}}_{0,\Vert~ [1.\mathrm{e-}7\mathrm{cm}^2/\mathrm{s}]$",
+                label=r"$D^{\mathrm{GB}}_{0,\Vert}~ [1.\mathrm{e-}7\mathrm{cm}^2/\mathrm{s}]$",
                 value="1.e5",
             )
             E_a_perp = mo.ui.text(
@@ -464,7 +451,7 @@ def _(
 def _(diff_bulk, diff_para, diff_perp, mo):
     mo.output.replace(mo.md("__Material properties:__"))
     mo.output.append(
-        mo.vstack(
+        mo.hstack(
             [
                 mo.md(rf"$D^{{\mathrm{{bulk}}}}$: {diff_bulk:.8f} [?]"),
                 mo.md(rf"$D^{{\mathrm{{GB}}}}_{{\Vert}}$: {diff_para:.8f} [?]"),
@@ -484,19 +471,16 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     _options_fields = ["full-field results", "effective diffusivity"]
-    sim_type_select = mo.ui.dropdown(options=_options_fields)
+    sim_type_select = mo.ui.dropdown(
+        label="Selection simulation type:", options=_options_fields
+    )
     sim_type_select
     return (sim_type_select,)
 
 
 @app.cell(hide_code=True)
 def _(mo, sim_type_select):
-    sim_output_select = None
-    load_input = None
     if sim_type_select.value == "full-field results":
-        load_input = mo.ui.text(
-            label="Load in x,y,z (separated by commas):", value="1,0,0"
-        )
         _options_fields = [
             "concentration field",
             "concentration fluctuation field",
@@ -504,10 +488,18 @@ def _(mo, sim_type_select):
             "flux field",
         ]
         sim_output_select = mo.ui.multiselect(
-            label="Select all fields to be computed", options=_options_fields
+            label="Select all fields to be computed:", options=_options_fields
         )
-    mo.vstack([load_input, sim_output_select])
-    return load_input, sim_output_select
+        mo.output.replace(sim_output_select)
+    return (sim_output_select,)
+
+
+@app.cell(hide_code=True)
+def _(mo, sim_type_select):
+    if sim_type_select.value == "full-field results":
+        load_input = mo.ui.text(label="Loading in x,y,z:", value="1,0,0")
+        mo.output.replace(load_input)
+    return (load_input,)
 
 
 @app.cell(hide_code=True)
@@ -519,18 +511,14 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    n_processes_input = mo.ui.text(
-        label="Number of processes for simulation:", value="16"
-    )
+    n_processes_input = mo.ui.text(label="Number of processes:", value="16")
     n_processes_input
     return (n_processes_input,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    input_fn_input = mo.ui.text(
-        label="File name for FANS input file (without file ending):", value="input"
-    )
+    input_fn_input = mo.ui.text(label="File name for FANS input:", value="input")
     input_fn_input
     return (input_fn_input,)
 
@@ -614,9 +602,7 @@ def _(export_input, input_FANS, input_fn_input, json):
 
 @app.cell(hide_code=True)
 def _(mo):
-    result_fn_input = mo.ui.text(
-        label="File name for FANS results file (without file ending):", value="results"
-    )
+    result_fn_input = mo.ui.text(label="File name for FANS results:", value="results")
     result_fn_input
     return (result_fn_input,)
 
@@ -695,18 +681,20 @@ def _(generate_xdmf, subprocess, visu_available):
 def _(mo, resolution, sim_output_select, visu_available):
     do_inapp_visu = False
     if visu_available:
-        if resolution[0] * resolution[1] * resolution[2] <= 64 * 64 * 64:
+        if (
+            resolution[0] * resolution[1] * resolution[2] <= 64 * 64 * 64
+        ):  # and (len(sim_output_select.value) > 0):
             do_inapp_visu = True
             _options = ["microstructure"] + sim_output_select.value
             visu_output_select = mo.ui.dropdown(
-                label="Select field to visualize below", options=_options
+                label="Select field to visualize:", options=_options
             )
-            visu_output_select
+            mo.output.replace(visu_output_select)
         else:
             do_inapp_visu = False
             mo.output.replace(
                 mo.md(
-                    "Resolution too high for in-app visualization! Please use ParaView to view the generated xdmf-file."
+                    "Resolution too fine for in-app visualization! Please use ParaView to view the generated xdmf-file."
                 )
             )
     return do_inapp_visu, visu_output_select
@@ -744,8 +732,10 @@ def _(
     faces,
     h5py,
     map_coordinates,
+    mo,
     ms_dsn,
     ms_fn,
+    n_grains,
     np,
     result_fn,
     result_prefix_input,
@@ -755,40 +745,47 @@ def _(
     visu_output_select,
 ):
     if do_inapp_visu:
-        # Load scalar data from HDF5
-        result_dsn = f"{ms_dsn}/eroded_image_results/{result_prefix_input.value}/load0/time_step0/"
-        _h5_fn = result_fn
-        match visu_output_select.value:
-            case "microstructure":
-                result_dsn = f"{ms_dsn}/eroded_image/"
-                _h5_fn = ms_fn
-            case "concentration field":
-                result_dsn += "displacement"
-            case "concentration fluctuation field":
-                result_dsn += "displacement_fluctuation"
-            case "concentration gradient field":
-                result_dsn += "strain"
-            case "flux field":
-                result_dsn += "stress"
+        if visu_output_select.value is not None:
+            # Load scalar data from HDF5
+            result_dsn = f"{ms_dsn}/eroded_image_results/{result_prefix_input.value}/load0/time_step0/"
+            _h5_fn = result_fn
+            match visu_output_select.value:
+                case "microstructure":
+                    result_dsn = f"{ms_dsn}/eroded_image/"
+                    _h5_fn = ms_fn
+                case "concentration field":
+                    result_dsn += "displacement"
+                case "concentration fluctuation field":
+                    result_dsn += "displacement_fluctuation"
+                case "concentration gradient field":
+                    result_dsn += "strain"
+                case "flux field":
+                    result_dsn += "stress"
 
-        with h5py.File(_h5_fn, "r") as f:
-            _field_ref = f[result_dsn]
-            if len(_field_ref.shape) > 3:
-                match _field_ref.shape[-1]:
-                    case 1:
-                        _field = _field_ref[:][:, :, :, 0]
-                    case 3:
-                        _field = np.linalg.norm(_field_ref[:], axis=-1)
-            else:
-                _field = _field_ref[:]
+            with h5py.File(_h5_fn, "r") as f:
+                _field_ref = f[result_dsn]
+                if len(_field_ref.shape) > 3:
+                    match _field_ref.shape[-1]:
+                        case 1:
+                            _field = _field_ref[:][:, :, :, 0]
+                        case 3:
+                            _field = np.linalg.norm(_field_ref[:], axis=-1)
+                else:
+                    _field = _field_ref[:]
+                    if visu_output_select.value == "microstructure":
+                        _field = _field < n_grains
 
-        vertex_scalars = map_coordinates(_field, verts.T / spacing[:, None], order=1)
-        vertex_colors = trimesh.visual.interpolate(vertex_scalars, color_map="viridis")
+            vertex_scalars = map_coordinates(
+                _field, verts.T / spacing[:, None], order=1
+            )
+            vertex_colors = trimesh.visual.interpolate(
+                vertex_scalars, color_map="viridis"
+            )
 
-        mesh = trimesh.Trimesh(
-            vertices=verts, faces=faces, vertex_colors=vertex_colors, process=True
-        )
-        mesh.show(viewer="marimo")
+            mesh = trimesh.Trimesh(
+                vertices=verts, faces=faces, vertex_colors=vertex_colors, process=True
+            )
+            mo.output.replace(mesh.show(viewer="marimo"))
     return
 
 
