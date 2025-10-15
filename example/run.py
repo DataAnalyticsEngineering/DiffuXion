@@ -1,7 +1,11 @@
 import marimo
 
 __generated_with = "0.16.5"
-app = marimo.App(width="full", layout_file="layouts/run.grid.json")
+app = marimo.App(
+    width="full",
+    app_title="DiffuXion",
+    layout_file="layouts/run.grid.json",
+)
 
 
 @app.cell(hide_code=True)
@@ -14,7 +18,25 @@ def _():
     from scipy.ndimage import map_coordinates
     from skimage import measure
     import trimesh
-    return h5py, json, map_coordinates, measure, mo, np, subprocess, trimesh
+    import os
+    return (
+        h5py,
+        json,
+        map_coordinates,
+        measure,
+        mo,
+        np,
+        os,
+        subprocess,
+        trimesh,
+    )
+
+
+@app.cell(hide_code=True)
+def _(os):
+    # Make sure that data directory exists
+    os.makedirs("./data", exist_ok=True)
+    return
 
 
 @app.cell(hide_code=True)
@@ -25,7 +47,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    n_grains_input = mo.ui.text(label="Number of grains:", value="2")
+    n_grains_input = mo.ui.text(label="Number of grains:", value="27")
     n_grains_input
     return (n_grains_input,)
 
@@ -352,12 +374,17 @@ def _(def_diff, mo):
     apply_arrhenius = False
     match def_diff.value:
         case "...directly":
-            diff_bulk_input = mo.ui.text(label=r"$D^{\mathrm{bulk}}$ [?]", value="1.0")
+            diff_bulk_input = mo.ui.text(
+                label=r"$D^{\mathrm{bulk}}~ [1.\mathrm{e-}7\mathrm{cm}^2/\mathrm{s}]$",
+                value="1.0",
+            )
             diff_para_input = mo.ui.text(
-                label=r"$D^{\mathrm{GB}}_{\Vert}$ [?]", value="1.0"
+                label=r"$D^{\mathrm{GB}}_{\Vert}~ [1.\mathrm{e-}7\mathrm{cm}^2/\mathrm{s}]$",
+                value="1.0",
             )
             diff_perp_input = mo.ui.text(
-                label=r"$D^{\mathrm{GB}}_{\perp}$ [?]", value="1.0"
+                label=r"$D^{\mathrm{GB}}_{\perp}~ [1.\mathrm{e-}7\mathrm{cm}^2/\mathrm{s}]$",
+                value="1.0",
             )
             _options = [diff_bulk_input, diff_para_input, diff_perp_input]
         case "...via Arrhenius relation":
@@ -453,9 +480,15 @@ def _(diff_bulk, diff_para, diff_perp, mo):
     mo.output.append(
         mo.hstack(
             [
-                mo.md(rf"$D^{{\mathrm{{bulk}}}}$: {diff_bulk:.8f} [?]"),
-                mo.md(rf"$D^{{\mathrm{{GB}}}}_{{\Vert}}$: {diff_para:.8f} [?]"),
-                mo.md(rf"$D^{{\mathrm{{GB}}}}_{{\perp}}$: {diff_perp:.8f} [?]"),
+                mo.md(
+                    rf"$D^{{\mathrm{{bulk}}}}$: {diff_bulk:.4f} $[1.\mathrm{{e-}}7\mathrm{{cm}}^2/\mathrm{{s}}]$"
+                ),
+                mo.md(
+                    rf"$D^{{\mathrm{{GB}}}}_{{\Vert}}$: {diff_para:.4f} $[1.\mathrm{{e-}}7\mathrm{{cm}}^2/\mathrm{{s}}]$"
+                ),
+                mo.md(
+                    rf"$D^{{\mathrm{{GB}}}}_{{\perp}}$: {diff_perp:.4f} $[1.\mathrm{{e-}}7\mathrm{{cm}}^2/\mathrm{{s}}]$"
+                ),
             ]
         )
     )
@@ -504,7 +537,7 @@ def _(mo, sim_type_select):
 
 @app.cell(hide_code=True)
 def _(mo):
-    result_prefix_input = mo.ui.text(label="Dataset name:", value="dset_0")
+    result_prefix_input = mo.ui.text(label="Dataset name:", value="sample_results")
     result_prefix_input
     return (result_prefix_input,)
 
@@ -518,7 +551,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    input_fn_input = mo.ui.text(label="File name for FANS input:", value="input")
+    input_fn_input = mo.ui.text(label="File name for FANS input:", value="data/input")
     input_fn_input
     return (input_fn_input,)
 
@@ -602,7 +635,9 @@ def _(export_input, input_FANS, input_fn_input, json):
 
 @app.cell(hide_code=True)
 def _(mo):
-    result_fn_input = mo.ui.text(label="File name for FANS results:", value="results")
+    result_fn_input = mo.ui.text(
+        label="File name for FANS results:", value="data/results"
+    )
     result_fn_input
     return (result_fn_input,)
 
@@ -636,36 +671,49 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(h5py, mo, ms_dsn, np, result_fn, result_prefix_input, sim_type_select):
+def _(
+    h5py,
+    mo,
+    ms_dsn,
+    np,
+    os,
+    result_fn,
+    result_prefix_input,
+    sim_type_select,
+):
     visu_available = False
     if sim_type_select.value == "full-field results":
         generate_xdmf = mo.ui.run_button(label="Generate xdmf")
         visu_available = True
-    else:
-        with h5py.File(result_fn, "r") as _f:
-            _homog_tangent = _f[
-                f"{ms_dsn}/eroded_image_results/{result_prefix_input.value}/load0/time_step0/homogenized_tangent"
-            ][:]
-            _homog_tangent_eigvals = np.linalg.eigvals(_homog_tangent)
-            _homog_tangent_eigvals.sort()
-        generate_xdmf = mo.vstack(
-            [
-                mo.md("__Effective diffusivity tensor:__"),
-                mo.md(
-                    f"{_homog_tangent[0,0]:.4f} &nbsp;&nbsp; {_homog_tangent[0,1]:.4f} &nbsp;&nbsp; {_homog_tangent[0,2]:.4f}"
-                ),
-                mo.md(
-                    f"{_homog_tangent[1,0]:.4f} &nbsp;&nbsp; {_homog_tangent[1,1]:.4f} &nbsp;&nbsp; {_homog_tangent[1,2]:.4f}"
-                ),
-                mo.md(
-                    f"{_homog_tangent[2,0]:.4f} &nbsp;&nbsp; {_homog_tangent[2,1]:.4f} &nbsp;&nbsp; {_homog_tangent[2,2]:.4f}"
-                ),
-                mo.md(
-                    f"_Eigenvalues:_ &nbsp;&nbsp; {_homog_tangent_eigvals[0]:.4f}, &nbsp;&nbsp; {_homog_tangent_eigvals[0]:.4f}, &nbsp;&nbsp; {_homog_tangent_eigvals[0]:.4f}"
-                ),
-            ]
-        )
-    generate_xdmf
+        mo.output.replace(generate_xdmf)
+    elif sim_type_select.value == "effective diffusivity":
+        generate_xdmf = mo.md("Run simulation first to display results here!")
+        _homog_tangent_path = f"{ms_dsn}/eroded_image_results/{result_prefix_input.value}/load0/time_step0/homogenized_tangent"
+        if os.path.isfile(result_fn):
+            with h5py.File(result_fn, "r") as _f:
+                if _homog_tangent_path in _f:
+                    _homog_tangent = _f[_homog_tangent_path][:]
+                    _homog_tangent_eigvals = np.linalg.eigvals(_homog_tangent)
+                    _homog_tangent_eigvals.sort()
+                    generate_xdmf = mo.vstack(
+                        [
+                            mo.md("__Effective diffusivity tensor:__"),
+                            mo.md(
+                                f"{_homog_tangent[0,0]:.4f} &nbsp;&nbsp; {_homog_tangent[0,1]:.4f} &nbsp;&nbsp; {_homog_tangent[0,2]:.4f}"
+                            ),
+                            mo.md(
+                                f"{_homog_tangent[1,0]:.4f} &nbsp;&nbsp; {_homog_tangent[1,1]:.4f} &nbsp;&nbsp; {_homog_tangent[1,2]:.4f}"
+                            ),
+                            mo.md(
+                                f"{_homog_tangent[2,0]:.4f} &nbsp;&nbsp; {_homog_tangent[2,1]:.4f} &nbsp;&nbsp; {_homog_tangent[2,2]:.4f}"
+                            ),
+                            mo.md(
+                                f"_Eigenvalues:_ &nbsp;&nbsp; {_homog_tangent_eigvals[0]:.4f}, &nbsp;&nbsp; {_homog_tangent_eigvals[0]:.4f}, &nbsp;&nbsp; {_homog_tangent_eigvals[0]:.4f}"
+                            ),
+                        ]
+                    )
+
+        mo.output.replace(generate_xdmf)
     return generate_xdmf, visu_available
 
 
