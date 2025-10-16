@@ -192,6 +192,7 @@ Thumbs.db
 *.vti
 
 !**/run.grid.json
+!utils/input.json
 
 # pixi environments
 .pixi

@@ -1,0 +1,42 @@
+{
+    "microstructure": {
+        "filepath": "data/voroImg_eroded.h5",
+        "datasetname": "/dset_0/eroded_image",
+        "L": [
+            1.0,
+            1.0,
+            1.0
+        ]
+    },
+    "problem_type": "thermal",
+    "matmodel": "GBDiffusion",
+    "material_properties": {
+        "GB_unformity": true,
+        "D_bulk": 1.0,
+        "D_perp": 0.01,
+        "D_par": 100.0
+    },
+    "method": "cg",
+    "error_parameters": {
+        "measure": "Linfinity",
+        "type": "absolute",
+        "tolerance": 1e-10
+    },
+    "n_it": 1000,
+    "macroscale_loading": [
+        [
+            [
+                1.0,
+                0.0,
+                0.0
+            ]
+        ]
+    ],
+    "results_prefix": "results",
+    "results": [
+        "displacement",
+        "displacement_fluctuation",
+        "strain",
+        "stress"
+    ]
+}
