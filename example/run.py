@@ -19,6 +19,7 @@ def _():
     from skimage import measure
     import trimesh
     import os
+
     return (
         h5py,
         json,
@@ -188,6 +189,7 @@ def _():
     from MSUtils.voronoi.VoronoiImage import PeriodicVoronoiImage
     from MSUtils.voronoi.VoronoiSeeds import VoronoiSeeds
     from MSUtils.voronoi.VoronoiTessellation import PeriodicVoronoiTessellation
+
     return (
         MicrostructureImage,
         PeriodicVoronoiImage,
