@@ -1,6 +1,8 @@
 # DiffuXion
 
-[short description goes here]
+[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
+
+Interactive interface for microstructure generation and diffusion simulation in polycrystaline materials - powered by [MSUtils](https://github.com/DataAnalyticsEngineering/MSUtils) and [FANS](https://github.com/DataAnalyticsEngineering/FANS)
 
 ## Table of contents
 - [Features](#features)
@@ -11,7 +13,15 @@
 
 ## Features
 
-...
+We provide an interactive easy-to-use interface to directly configure parameters, run simulations and visualize results. This includes:
+
+- generating Voronoi tessellations and corresponding voxel-based microstructures with prescribed grain boundary thickness
+- defining diffusion coefficients for bulk and transversely isotropic grain boundaries either directly or via Arrhenius parameters and temperature
+- computing full-field solutions (concentration, gradient and flux fields) as well as effective diffusivities
+
+Note that in-app visualization is limited to low resolution results. For high-resolution results and for advanced investigations we recommend viewing the results in [ParaView](https://www.paraview.org/) using the generated xdmf-file.
+
+More detailed information is provided [below](#usage).
 
 ## Getting started
 
@@ -32,7 +42,7 @@ curl -fsSL https://pixi.sh/install.sh | sh
 pixi install
 ```
 
-In general you can open a pixi environment shell via `pixi shell`. 
+In general you can open a pixi environment shell via `pixi shell`.
 
 
 Start the interactive interface to configure, run and visualize your simulations:
@@ -41,11 +51,11 @@ Start the interactive interface to configure, run and visualize your simulations
 pixi run start
 ```
 
-This will call `marimo run examples/run.py` in the background.
+This will execute `marimo run examples/run.py` in the background and should open a browser tab.
 
-## 
+## Usage
 
-...
+... some more details coming soon ...
 
 ## Acknowledgements
 
