@@ -58,8 +58,10 @@ This will execute `marimo run examples/run.py` in the background and should open
 
 ### Interactive interface
 
-... some more details coming soon ...
-
+The provided interface was built using [marimo](https://github.com/marimo-team/marimo). In addition to the app-like option described above the interface can also be launched in an editable notebook-like mode:
+```bash
+pixi run edit   # executes: marimo edit examples/run.py
+```
 
 ### Beyond the interface
 
