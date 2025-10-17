@@ -17,7 +17,7 @@ def main():
     Nx, Ny, Nz = 256, 256, 256
     # Grain boundary thickness
     interface_thickness = 0.03
-    
+
     permute_order = "zyx"
 
     # Generate Voronoi seeds and tessellation

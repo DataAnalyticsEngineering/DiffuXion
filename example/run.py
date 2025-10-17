@@ -720,10 +720,19 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(generate_xdmf, subprocess, visu_available):
+def _(generate_xdmf, os, result_fn, subprocess, visu_available):
     if visu_available:
         if generate_xdmf.value:
-            subprocess.run("python -m MSUtils.general.h52xdmf results.h5", shell=True)
+            if os.path.dirname(result_fn) in ["", "."]:
+                subprocess.run(
+                    f"python -m MSUtils.general.h52xdmf {os.path.basename(result_fn)}",
+                    shell=True,
+                )
+            else:
+                subprocess.run(
+                    f"cd {os.path.dirname(result_fn)} && python -m MSUtils.general.h52xdmf {os.path.basename(result_fn)}",
+                    shell=True,
+                )
     return
 
 
