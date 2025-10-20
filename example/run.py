@@ -3,7 +3,7 @@ import marimo
 __generated_with = "0.16.5"
 app = marimo.App(
     width="full",
-    app_title="DiffuXion",
+    app_title="PolycrystalDiffusion",
     layout_file="layouts/run.grid.json",
 )
 
