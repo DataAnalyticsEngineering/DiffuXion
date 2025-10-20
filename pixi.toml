@@ -1,6 +1,6 @@
 [workspace]
 channels = ["conda-forge"]
-name = "DiffuXion"
+name = "PolycrystalDiffusion"
 description = "Polycrystal grain boundary diffusion and exploration"
 authors = [
     "Sanath Keshav <keshav@mib.uni-stuttgart.de>",
