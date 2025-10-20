@@ -1,4 +1,4 @@
-# DiffuXion
+# PolycrystalDiffusion
 
 [![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
 
@@ -29,8 +29,8 @@ More detailed information is provided [below](#usage).
 Clone this repository to your system:
 
 ```bash
-git clone https://github.com/DataAnalyticsEngineering/DiffuXion
-cd DiffuXion
+git clone https://github.com/DataAnalyticsEngineering/PolycrystalDiffusion
+cd PolycrystalDiffusion
 ```
 
 We recommend using [pixi](https://pixi.sh/) to effortlessly set up an isolated environment with all required dependencies:
